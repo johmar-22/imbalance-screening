@@ -1,0 +1,22 @@
+# Environment for run_analysis.py
+#
+# These are minimum-compatible bounds, not the exact versions of the run that
+# produced results/. Before publishing, replace this file with the true
+# environment: run `pip freeze > requirements-frozen.txt` in the SAME session
+# that produced the committed results, and commit both files.
+#
+# Python 3.10 or newer is required (3.10 / 3.11 recommended; matminer and
+# pymatgen wheels lag on the newest Python).
+
+numpy>=1.24,<2.1
+pandas>=2.0
+scipy>=1.11
+matplotlib>=3.7
+scikit-learn>=1.3
+imbalanced-learn>=0.11
+xgboost>=2.0            # device='cuda' argument requires the 2.x API
+pymatgen>=2023.9.10
+matminer>=0.9.0
+shap>=0.44
+statsmodels>=0.14
+requests>=2.31

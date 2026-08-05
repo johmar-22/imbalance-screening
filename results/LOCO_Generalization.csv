@@ -1,0 +1,11 @@
+held_out_family,strategy,n_test,base_rate,F2,AvgPrec,enrichment@100
+chalcogenide,None,929,0.151,0.225,0.442,3.25
+chalcogenide,ClassWeight,929,0.151,0.534,0.328,2.12
+halide,None,2490,0.033,0.096,0.088,4.25
+halide,ClassWeight,2490,0.033,0.2,0.119,5.47
+other,None,157,0.242,0.475,0.607,1.45
+other,ClassWeight,157,0.242,0.612,0.63,1.45
+oxide,None,4948,0.019,0.0,0.092,7.98
+oxide,ClassWeight,4948,0.019,0.038,0.075,5.32
+pnictide,None,400,0.21,0.345,0.547,2.62
+pnictide,ClassWeight,400,0.21,0.545,0.535,2.48

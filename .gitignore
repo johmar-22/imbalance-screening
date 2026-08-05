@@ -1,0 +1,39 @@
+# --- secrets: never commit -----------------------------------------------
+.env
+*.key
+mp_api_key*
+secrets.*
+
+# --- run artifacts --------------------------------------------------------
+_checkpoints/
+results_reproduced/
+ml_project_v7_major_revision/
+*.pkl
+
+# --- large downloads that the script fetches itself -----------------------
+boltztrap_mp.csv
+ricci_boltztrap_mp_tabular*
+*.json.gz
+*.csv.gz
+
+# --- python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+*.egg-info/
+.pytest_cache/
+
+# --- editors and OS -------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- manuscript working files: keep the repo about the analysis -----------
+*.docx
+~$*
+*.pptx

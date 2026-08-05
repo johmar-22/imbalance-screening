@@ -1,0 +1,4 @@
+strategy,n_external,base_rate,F2,AvgPrec,ROC-AUC,precision@100,enrichment@100,precision@500,enrichment@500,precision@1000,enrichment@1000
+None,10879,0.1659,0.19,0.368,0.716,0.51,3.07,0.566,3.41,0.487,2.94
+ClassWeight,10879,0.1659,0.326,0.366,0.716,0.59,3.56,0.56,3.38,0.481,2.9
+None,10879,0.1659,0.19,0.368,0.716,0.51,3.07,0.566,3.41,0.487,2.94

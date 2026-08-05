@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this software or these results, please cite the manuscript below."
+title: "Rare-class prediction of low hole effective mass from composition alone: a leakage-controlled benchmark of imbalance-handling strategies"
+abstract: >-
+  Source code, result tables and figures for a composition-only benchmark of
+  imbalance-handling strategies applied to the identification of compounds with
+  low hole effective mass in the BoltzTraP Materials Project transport database.
+authors:
+  - family-names: "Omar"
+    given-names: "Johaimen M."
+    orcid: "https://orcid.org/0009-0005-3495-1722"
+    affiliation: "Kastamonu University; Mindanao State University - Main Campus"
+version: "1.0.0"
+date-released: "2026-08-05"
+license: MIT
+repository-code: "https://github.com/johmar-22/materials-imbalance-screening"
+keywords:
+  - machine learning
+  - materials informatics
+  - class imbalance
+  - effective mass
+  - p-type semiconductors
+  - high-throughput screening
+references:
+  - type: article
+    title: "An ab initio electronic transport database for inorganic materials"
+    authors:
+      - family-names: "Ricci"
+        given-names: "Francesco"
+    journal: "Scientific Data"
+    volume: 4
+    year: 2017
+    doi: "10.1038/sdata.2017.85"

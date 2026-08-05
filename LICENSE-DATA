@@ -1,0 +1,29 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+Copyright (c) 2026 Johaimen M. Omar
+
+The contents of results/, figures/ and data/ in this repository are licensed
+under the Creative Commons Attribution 4.0 International License.
+
+You are free to share and adapt this material for any purpose, including
+commercially, provided you give appropriate credit, provide a link to the
+license, and indicate if changes were made.
+
+Full license text: https://creativecommons.org/licenses/by/4.0/legalcode
+Human-readable summary: https://creativecommons.org/licenses/by/4.0/
+
+ATTRIBUTION OF UPSTREAM DATA
+The transport quantities aggregated in results/ and data/ derive from:
+
+  Ricci, F., Chen, W., Aydemir, U., Snyder, G. J., Rignanese, G.-M.,
+  Jain, A., Hautier, G. "An ab initio electronic transport database for
+  inorganic materials." Scientific Data 4, 170085 (2017).
+  doi:10.1038/sdata.2017.85
+
+Magpie elemental-property descriptors derive from:
+
+  Ward, L., Agrawal, A., Choudhary, A., Wolverton, C. "A general-purpose
+  machine learning framework for predicting properties of inorganic
+  materials." npj Computational Materials 2, 16028 (2016).
+
+Reuse of those data remains subject to their original licenses.
