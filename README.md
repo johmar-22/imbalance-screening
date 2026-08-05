@@ -44,7 +44,7 @@ evaluated.
 
 ```bash
 git clone https://github.com/johmar-22/imbalance-screening.git
-cd materials-imbalance-screening
+cd imbalance-screening
 
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
