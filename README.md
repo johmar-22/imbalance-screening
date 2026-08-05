@@ -43,7 +43,7 @@ evaluated.
 ## 2. Quick start
 
 ```bash
-git clone https://github.com/<your-account>/materials-imbalance-screening.git
+git clone https://github.com/johmar-22/imbalance-screening.git
 cd materials-imbalance-screening
 
 python -m venv .venv
