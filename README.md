@@ -4,9 +4,7 @@ A leakage-controlled benchmark of imbalance-handling strategies for
 composition-only screening of p-type semiconductors.
 
 This repository contains the complete source code, result tables and figures for
-the manuscript *Rare-class prediction of low hole effective mass from
-composition alone: a leakage-controlled benchmark of imbalance-handling
-strategies*.
+the manuscript *Class-imbalance corrections for composition-only screening of low hole effective mass: a leakage-controlled benchmarking analysis*.
 
 **Nothing in this repository requires Google Drive, a Colab session, or any
 manually downloaded data file.** The primary dataset is fetched from Figshare
