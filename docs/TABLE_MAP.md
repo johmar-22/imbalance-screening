@@ -1,7 +1,5 @@
 # Manuscript to repository map
 
-Every numbered object in manuscript v32, and the file in this repository that
-produces or contains it.
 
 Objects marked **NEW** did not exist when the repository was first published.
 Objects marked **RENUMBERED** exist but changed number: Table 3 of the earlier
