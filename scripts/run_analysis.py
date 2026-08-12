@@ -22,7 +22,7 @@ BEFORE YOU RUN
    results to within floating-point accumulation order.
 
 3. Optional. A free Materials Project key adds band gap, gap character and
-   energy above hull to Top100_Candidates.csv (manuscript Table 4):
+   energy above hull to Top100_Candidates.csv (manuscript Table 3):
 
        export MP_API_KEY=your_key_here      # PowerShell: $env:MP_API_KEY="..."
 
@@ -106,7 +106,7 @@ Command line (all optional):
 Environment variables:
 
     MP_API_KEY   optional Materials Project key. Adds band gap, gap character
-                 and energy above hull to Top100_Candidates.csv (Table 4).
+                 and energy above hull to Top100_Candidates.csv (Table 3).
                  Every other output is produced without it.
 """
 
@@ -541,6 +541,28 @@ print("     identical feature vectors appearing in train and test.")
 pd.DataFrame({'composition': _vc.index, 'n_entries': _vc.values}).to_csv(
     os.path.join(save_dir, 'Composition_Redundancy.csv'), index=False)
 
+# The seven counts quoted in Section 3.3 of the manuscript, plus the identity of
+# the compositions whose polymorphs straddle the cutoff. The Data availability
+# statement promises both, so they are written to disk rather than only printed.
+_agg_ms = df.groupby('comp_group')['m_p'].agg(['min', 'max', 'count'])
+_str_tbl = _agg_ms[(_agg_ms['min'] < TARGET_THRESHOLD)
+                   & (_agg_ms['max'] >= TARGET_THRESHOLD)]
+pd.DataFrame([{
+    'Rows': len(df),
+    'Unique compositions': int(df['comp_group'].nunique()),
+    'Compositions with >1 polymorph': _n_dup_groups,
+    'Rows in multi-polymorph compositions': _n_dup_rows,
+    'Share of rows': float(_n_dup_rows / len(df)),
+    'Compositions straddling the cutoff': int(len(_str_tbl)),
+    'Cutoff (m_e)': TARGET_THRESHOLD,
+}]).to_csv(os.path.join(save_dir, 'Composition_Structure.csv'), index=False)
+(_str_tbl.reset_index()
+ .rename(columns={'comp_group': 'composition', 'min': 'm_p_min',
+                  'max': 'm_p_max', 'count': 'n_entries'})
+ .to_csv(os.path.join(save_dir, 'Straddling_Compositions.csv'), index=False))
+print(f"  composition structure -> Composition_Structure.csv, "
+      f"Straddling_Compositions.csv ({len(_str_tbl)} straddling)")
+
 """## 2. FEATURES  (R2-1: composition only, no DFT required)
 
 Magpie elemental-property statistics are functions of the chemical formula  
@@ -806,6 +828,20 @@ print(res[['F2', 'F2_tuned', 'AvgPrecision', 'Precision', 'Recall',
 res.to_csv(os.path.join(save_dir, 'Main_Results.csv'))
 pd.DataFrame(best_params_log).to_csv(
     os.path.join(save_dir, 'Best_Hyperparameters.csv'), index=False)
+
+# Per-fold values behind Tables 1, 2, S2, S5 and S6. Exported so that
+# run_extended_analysis.py, and any reader, can recompute the paired tests
+# without unpickling a checkpoint. Checkpoints are gitignored; this is not.
+_pf = []
+for _s in STRATEGIES:
+    for _i in range(len(SPLITS)):
+        _row_pf = {'Strategy': _s, 'Fold': _i + 1}
+        for _m in METRICS:
+            _row_pf[_m] = fold_metrics[_s][_m][_i]
+        _pf.append(_row_pf)
+pd.DataFrame(_pf).to_csv(
+    os.path.join(save_dir, 'Fold_Metrics_PerFold.csv'), index=False)
+print(f"  per-fold metrics -> Fold_Metrics_PerFold.csv ({len(_pf)} rows)")
 
 # Honest automatic read-out of the two literature hypotheses
 best_f2  = max(STRATEGIES, key=lambda s: np.mean(fold_metrics[s]['F2']))
@@ -1542,6 +1578,38 @@ print(f"  ranking model: {best_ap}   base rate: {base_rate:.3f}")
 print(pk.to_string(index=False))
 pk.to_csv(os.path.join(save_dir, 'Screening_PrecisionAtK.csv'), index=False)
 
+# ---- precision@k for every strategy (Figure 7a, Section 4.6) ---------------
+# The single-model table above backs the values quoted in the text. Section 4.6
+# also claims that no correction is at least as precise as all four resamplers
+# at every list length, which needs all six curves.
+_rows_pk = []
+for _s in STRATEGIES:
+    _o = np.argsort(-oof_prob[_s])
+    for _k in [25, 50, 100, 250, 500, 1000]:
+        if _k > len(_o):
+            continue
+        _top = _o[:_k]
+        _p = float(yv[_top].mean())
+        _rows_pk.append({'strategy': _s, 'k': _k,
+                         'precision@k': round(_p, 3),
+                         'enrichment': round(_p / base_rate, 2),
+                         'recall@k': round(float(yv[_top].sum() / yv.sum()), 3)})
+pk_all = pd.DataFrame(_rows_pk)
+print("\n  precision@k by strategy")
+print(pk_all.pivot(index='k', columns='strategy',
+                   values='precision@k')[list(STRATEGIES)].to_string())
+pk_all.to_csv(os.path.join(save_dir,
+              'Screening_PrecisionAtK_AllStrategies.csv'), index=False)
+
+# ---- out-of-fold probabilities (Section 4.11, Figure 10) -------------------
+# run_extended_analysis.py reads these and refits nothing. CSV so a reader can
+# open it without numpy; the .npy is kept for backward compatibility.
+pd.DataFrame({_s: oof_prob[_s] for _s in STRATEGIES}).to_csv(
+    os.path.join(save_dir, 'OOF_Probabilities.csv'), index=False)
+np.save(os.path.join(save_dir, 'oof_prob_all.npy'),
+        np.vstack([oof_prob[_s] for _s in STRATEGIES]))
+print("  out-of-fold probabilities -> OOF_Probabilities.csv, oof_prob_all.npy")
+
 cum = np.cumsum(yv[order])
 ks = np.arange(1, len(order)+1)
 fig, axes = plt.subplots(1, 2, figsize=(W2COL, W2COL * 0.36))
@@ -1553,9 +1621,15 @@ handles_bottom, labels_bottom = [], []
 handles_upper, labels_upper = [], []
 bottom_targets = ['None', 'ClassWeight', 'B-SMOTE', 'SMOTE']
 
+# Below k = 20 the enrichment curve is one compound wide and swings between 0
+# and 1/base_rate. The caption of Figure 7 states the k = 20 floor, so the code
+# has to impose it or the published panel and this one are different figures.
+KMIN = 20
+_mk = ks >= KMIN
 for i, s in enumerate(STRATEGIES):
     o_s = np.argsort(-oof_prob[s])
-    line, = ax.plot(ks, np.cumsum(yv[o_s])/ks/base_rate, color=CB[i % len(CB)], label=s)
+    _enr = np.cumsum(yv[o_s]) / ks / base_rate
+    line, = ax.plot(ks[_mk], _enr[_mk], color=CB[i % len(CB)], label=s)
 
     if s in bottom_targets:
         handles_bottom.append(line)
@@ -1569,6 +1643,7 @@ handles_upper.append(line_rand)
 labels_upper.append('Random selection')
 
 ax.set_xscale('log')
+ax.set_xlim(KMIN, len(ks))
 ax.set_xlabel('Compounds inspected, $k$ (log scale)')
 ax.set_ylabel('Enrichment factor')
 
@@ -1981,6 +2056,7 @@ try:
             ignore_errors=True).drop(columns=['composition'])
         fe = fe[magpie_cols].reset_index(drop=True)
         ckpt_save('external_featurised', {'ext': ext, 'fe': fe})
+
     r2 = np.random.default_rng(RNG+1)
     fe['Noise_1'] = r2.normal(0, 1, len(fe))
     fe['Noise_2'] = r2.normal(0, 1, len(fe))
@@ -2024,16 +2100,17 @@ except Exception as e:
 
 """## 11. IS THE CROSS-BAND SIGNAL REDUCIBLE TO COMPOSITION?  (R2-2)
 
-Referee 2 argued the cross-band association is an expected materials-level  
-co-occurrence: broadly dispersive band structures give low effective masses  
-for both carriers. That is a testable claim. Under one identical protocol we  
-compare three input sets:  
-(a) composition only   (b) n-type transport only   (c) both  
-Interpretation, stated in advance:  
-- if (c) is not better than (a), the n-type descriptors add nothing beyond  
-composition and the co-occurrence explanation is sufficient;  
-- if (c) beats (a) materially, the n-type descriptors carry band-structure  
-information that composition does not encode.  
+Referee 2 argued the cross-band association is an expected materials-level
+co-occurrence: broadly dispersive band structures give low effective masses
+for both carriers. That is a testable claim. Under one identical protocol we
+compare three input sets:
+(a) composition only   (b) n-type transport only   (c) both
+
+Interpretation, stated in advance:
+- if (c) is not better than (a), the n-type descriptors add nothing beyond
+  composition and the co-occurrence explanation is sufficient;
+- if (c) beats (a) materially, the n-type descriptors carry band-structure
+  information that composition does not encode.
 Either outcome is reportable. No mechanism is proposed.
 """
 
@@ -2081,6 +2158,7 @@ for name, Xs in sets.items():
             'F2_mean': float(np.mean(f2v)), 'AP_mean': float(np.mean(apv))}
     cb.append(_row)
     ckpt_save(_tag, _row)
+
 cb = pd.DataFrame(cb)
 print("\n" + cb.drop(columns=['F2_mean', 'AP_mean']).to_string(index=False))
 cb.to_csv(os.path.join(save_dir, 'CrossBand_Incremental_Test.csv'), index=False)
@@ -2097,7 +2175,6 @@ else:
     print("  encode. Report the magnitude; do not attach an untested mechanism.")
 
 """## 12. SUMMARY
-
 """
 
 print("\n" + "="*72)
