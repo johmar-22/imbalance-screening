@@ -229,10 +229,7 @@ Section 3.3 including the identity of the 58 straddling compositions
 the per-fold values behind every table, the complete 100-compound candidate
 list, and the evaluation card of Section 5.6.
 
-Every figure exists as `.pdf`, `.png` and `.tiff` at 600 dpi, except
-`Fig2_Pipeline_Overview`, which was drawn separately and is committed as
-`.png`, `.svg` and `.tiff`. The SVG is vector and serves the same purpose as a
-PDF.
+Every figure exists as `.pdf` at 600 dpi.
 
 ---
 
