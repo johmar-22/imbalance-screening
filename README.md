@@ -1,7 +1,7 @@
 # Rare-class prediction of low hole effective mass from composition alone
 
 A leakage-controlled benchmark of imbalance-handling strategies for
-composition-only screening of p-type semiconductors.
+composition-only screening.
 
 This repository contains the complete source code, result tables and figures for
 the manuscript *Class-imbalance corrections for composition-only screening of low hole effective mass: a leakage-controlled benchmarking analysis*.
