@@ -1,10 +1,10 @@
-# Rare-class prediction of low hole effective mass from composition alone
+# Class-imbalance corrections for composition-only screening of low hole effective mass
 
-A leakage-controlled benchmark of imbalance-handling strategies for
-composition-only screening.
+A leakage-controlled benchmarking analysis.
 
 This repository contains the complete source code, result tables and figures for
-the manuscript *Class-imbalance corrections for composition-only screening of low hole effective mass: a leakage-controlled benchmarking analysis*.
+the manuscript *Class-imbalance corrections for composition-only screening of
+low hole effective mass: a leakage-controlled benchmarking analysis*.
 
 **Nothing in this repository requires Google Drive, a Colab session, or any
 manually downloaded data file.** The primary dataset is fetched from Figshare
@@ -17,8 +17,8 @@ through `matminer` on first run and cached locally.
 The dataset is the `boltztrap_mp` release distributed through `matminer`
 (8,924 compounds with complete transport data), derived from the ab initio
 electronic transport database of Ricci et al. (2017). The positive class is
-defined by the hole effective mass threshold m\*p < 1.0 me, which occurs in a
-small minority of entries.
+defined by the hole effective mass threshold m\*p < 1.0 me, which occurs in
+4.90% of entries, an imbalance ratio of 19.4:1.
 
 Model inputs are Magpie elemental-property descriptors computed from the
 chemical formula only. They are available for any hypothetical composition
@@ -35,6 +35,20 @@ expected calibration error), retrospective screening utility (enrichment,
 precision@k), leave-one-chemical-family-out generalization and an external
 hold-out on unseen compositions from the larger Ricci tabular release are all
 evaluated.
+
+Two further analyses turn assertions about the protocol into measurements:
+
+- **A leakage ablation.** The benchmark is rerun under grouped and ungrouped
+  splits at frozen hyperparameters, and the held-out rows are separated into
+  those whose composition is shared with a polymorph and those whose composition
+  is unique. Aggregate inflation is small, but it is concentrated entirely on the
+  rows leakage can reach and absent from the rows it cannot. This prices the
+  composition grouping instead of assuming it matters.
+- **A decision-curve decomposition.** Net benefit separates the cost of a
+  displaced probability scale from the cost of a damaged ranking. Most of the
+  apparent difference between imbalance strategies is the scale, not the
+  ranking, which is why recalibration removes it and why a discrimination-only
+  audit will not show it.
 
 ---
 
@@ -53,13 +67,28 @@ pip install -r requirements.txt
 python scripts/run_analysis.py --outdir results_reproduced --quick
 
 # Full run behind every reported number. 1.5-2.5 h on a GPU, 6-10 h on CPU.
-python scripts/run_analysis.py --outdir results_reproduced
+python scripts/run_analysis.py          --outdir results_reproduced
+python scripts/run_extended_analysis.py --outdir results_reproduced
+```
+
+The two scripts run in that order. `run_extended_analysis.py` reads three files
+that `run_analysis.py` writes (`Best_Hyperparameters.csv`,
+`OOF_Probabilities.csv`, `Fold_Metrics_PerFold.csv`) and refits models only for
+the leakage ablation. It names the missing file if you run it too early.
+
+Figure 1 of the manuscript is drawn separately, because it renders crystal
+structures rather than analysis output:
+
+```bash
+python scripts/make_fig_leakage.py
 ```
 
 Every table and figure of the manuscript is written into `--outdir`. Compare
 against the committed copies in `results/` and `figures/`.
 
 ### Command line options
+
+Both scripts accept the same flags.
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -69,6 +98,13 @@ against the committed copies in `results/` and `figures/`.
 | `--no-resume` | off | Ignore existing checkpoints and recompute everything |
 | `--data-source {figshare,csv}` | `figshare` | Dataset origin |
 | `--datadir PATH` | script directory | Where a local `boltztrap_mp.csv` is looked for, only when `--data-source csv` |
+
+`run_extended_analysis.py` adds two of its own:
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--only {ablation,contrast,dca,tests}` | all | Run one part only. `--only dca` reproduces Figure 10 in about a minute. |
+| `--n-boot N` | `10000` | Bootstrap draws for the inflation interval of Table 8 |
 
 ### Checkpointing
 
@@ -84,7 +120,7 @@ forces a full recomputation.
 
 ## 3. Optional: Materials Project enrichment
 
-Table 4 of the manuscript reports band gap, gap character and energy above hull
+Table 3 of the manuscript reports band gap, gap character and energy above hull
 for the fifteen highest-ranked candidates. Those three columns come from the
 Materials Project REST API and require a free key from
 <https://next-gen.materialsproject.org/api>.
@@ -98,7 +134,7 @@ Without a key the script runs to completion and prints a notice; the band gap,
 gap character and stability columns of `Top100_Candidates.csv` are left empty.
 No other result depends on the key. The committed `results/Top100_Candidates.csv`
 already contains the enriched columns, so a reviewer does not need a key to
-check Table 4.
+check Table 3.
 
 **No API key is stored in this repository.** The script reads `MP_API_KEY` from
 the environment and nowhere else.
@@ -117,8 +153,9 @@ the environment and nowhere else.
 ├── environment.yml          conda alternative
 ├── .gitignore
 ├── scripts/
-│   ├── run_analysis.py      the complete analysis, one file, no Drive
-│   └── make_supplementary.py  regenerates docs/ tables from results/
+│   ├── run_analysis.py           the main benchmark, one file, no Drive
+│   ├── run_extended_analysis.py  leakage ablation, decision curves, Tables S5-S8
+│   └── make_fig_leakage.py       Figure 1, the leakage mechanism
 ├── notebooks/
 │   └── run_analysis.ipynb   identical code as a notebook, for Colab
 ├── data/
@@ -126,9 +163,11 @@ the environment and nowhere else.
 ├── results/                 every CSV behind the manuscript tables
 ├── figures/                 every figure, in PDF, PNG and TIFF
 └── docs/
-    ├── TABLE_MAP.md         manuscript table/figure -> file in this repo
-    ├── FILE_MANIFEST.md     every file, its source and its destination
-    └── Table_S1_Metrics.md  supplementary Table S1
+    ├── TABLE_MAP.md          manuscript table/figure -> file in this repo
+    ├── FILE_MANIFEST.md      every file, its source and its destination
+    ├── Table_S1_Metrics.md   supplementary Table S1
+    ├── Table_9_Scorecard.md  the strategy scorecard, manuscript Table 9
+    └── EVALUATION_CARD.md    the evaluation card of Section 5.6
 ```
 
 ### `data/magpie_cache.csv`
@@ -155,23 +194,45 @@ Full detail in [`docs/TABLE_MAP.md`](docs/TABLE_MAP.md). Summary:
 | Manuscript | File |
 |---|---|
 | Table 1, Table 2 | `results/Main_Results.csv` |
-| Table 3 | `results/Screening_PrecisionAtK.csv` |
-| Table 4 | `results/Top100_Candidates.csv` (first 15 rows) |
-| Table 5 | `results/LOCO_Generalization.csv` |
-| Table 6 | `results/External_Ricci_Validation.csv` |
-| Table 7 | `results/CrossBand_Incremental_Test.csv` |
-| Table 8 | `results/Recalibration_Summary.csv` |
+| Table 3 | `results/Top100_Candidates.csv` (first 15 rows) |
+| Table 4 | `results/LOCO_Generalization.csv` |
+| Table 5 | `results/External_Ricci_Validation.csv` |
+| Table 6 | `results/CrossBand_Incremental_Test.csv` |
+| Table 7 | `results/Recalibration_Summary.csv` |
+| Table 8 | `results/Leakage_Inflation.csv` |
+| Table 9 | `docs/Table_9_Scorecard.md` |
 | Table S1 | `docs/Table_S1_Metrics.md` |
 | Table S2 | `results/Stat_Wilcoxon_F2.csv` |
 | Table S3 | `results/Threshold_Sensitivity.csv` |
 | Table S4 | `results/Feature_Importances.csv` |
-| Figure 1 | `figures/Fig1_Pipeline_Overview.*` |
-| Figure 2 | `figures/Fig2_Strategy_Comparison.*` |
-| Figure 3 | `figures/Fig3_PR_and_Calibration.*` |
-| Figure 4 | `figures/Fig4_Threshold_Sensitivity.*` |
-| Figure 5 | `figures/Fig5_SHAP_Summary.*` |
-| Figure 6 | `figures/Fig6_Enrichment.*` |
-| Figure 7 | `figures/Fig7_Recalibration.*` |
+| Table S5 | `results/Stat_Wilcoxon_AP.csv` |
+| Table S6 | `results/Stat_Wilcoxon_ECE.csv` |
+| Table S7 | `results/Leakage_Ablation_PerFold.csv` |
+| Table S8 | `results/DecisionCurve_NetBenefit.csv`, `results/DecisionCurve_Ceiling.csv` |
+| Figure 1 | `figures/Fig1_Leakage_Mechanism.*` |
+| Figure 2 | `figures/Fig2_Pipeline_Overview.*` |
+| Figure 3 | `figures/Fig3_Strategy_Comparison.*` |
+| Figure 4 | `figures/Fig4_Ranking_and_Calibration.*` |
+| Figure 5 | `figures/Fig5_Threshold_Sensitivity.*` |
+| Figure 6 | `figures/Fig6_SHAP_Summary.*` |
+| Figure 7 | `figures/Fig7_Enrichment.*` |
+| Figure 8 | `figures/Fig8_Recalibration.*` |
+| Figure 9 | `figures/Fig9_Leakage_Ablation.*` |
+| Figure 10 | `figures/Fig10_Decision_Curve.*` |
+| Figure S1 | `figures/FigS1_PCA_Diagnostic.*` |
+
+The manuscript's Data availability statement promises Tables S1 to S8 and states
+that no separate supplementary document accompanies the article, so all eight
+are in this repository. It also promises the composition structure quoted in
+Section 3.3 including the identity of the 58 straddling compositions
+(`results/Composition_Structure.csv`, `results/Straddling_Compositions.csv`),
+the per-fold values behind every table, the complete 100-compound candidate
+list, and the evaluation card of Section 5.6.
+
+Every figure exists as `.pdf`, `.png` and `.tiff` at 600 dpi, except
+`Fig2_Pipeline_Overview`, which was drawn separately and is committed as
+`.png`, `.svg` and `.tiff`. The SVG is vector and serves the same purpose as a
+PDF.
 
 ---
 
@@ -182,15 +243,32 @@ Full detail in [`docs/TABLE_MAP.md`](docs/TABLE_MAP.md). Summary:
   accumulation order. Expect agreement to roughly the third decimal on F2 and
   average precision, which is far below the fold-to-fold standard deviations
   reported in the tables. The strategy ranking is stable.
-- **Runtime.** Full run is 1.5 to 2.5 hours on an NVIDIA T4/L4/A100 and 6 to 10
-  hours on CPU. The script detects the GPU automatically and falls back to CPU.
+- **Runtime.** `run_analysis.py` is 1.5 to 2.5 hours on an NVIDIA T4/L4/A100 and
+  6 to 10 hours on CPU. `run_extended_analysis.py` adds 25 to 40 minutes on a
+  GPU, almost all of it the 180 model fits of the leakage ablation; the decision
+  curves and the significance tests together take under a minute and refit
+  nothing. Both scripts detect the GPU automatically and fall back to CPU.
+- **The attainable net-benefit curve is computed exactly.** Figure 10c and
+  Section 4.11 rest on the claim that this curve depends on the ranking alone
+  and is therefore invariant to any strictly monotone rescaling of the
+  probabilities. Sweeping a fixed grid of cut values satisfies that only
+  approximately. `run_extended_analysis.py` instead sorts by score and maximizes
+  over the achievable cuts, restricted to tie-group boundaries, since a
+  threshold cannot separate two compounds carrying the same probability, which
+  for polymorphs is the normal case here.
 - **`shap` and `scipy`.** Recent `shap` releases can conflict with an older
   `scipy` already resident in a session. If the SHAP section is skipped with an
   import error, run `pip install -U scipy shap` and restart the interpreter.
-  Only Figure 5 depends on SHAP; every other output is unaffected.
+  Only Figure 6 depends on SHAP; every other output is unaffected.
 - **Two noise columns** (`Noise_1`, `Noise_2`) are drawn from a standard normal
   and injected deliberately as a negative control on the feature-selection
   stage. They are not a bug.
+- **Not every analysis uses the full protocol.** The threshold sensitivity of
+  Section 4.4, the descriptor attribution of Section 4.5, the generalization
+  tests of Section 4.7, the incremental test of Section 4.8 and the leakage
+  ablation of Section 4.10 each depart from the Table 1 configuration, and the
+  manuscript states how in each case. Values from those analyses are comparable
+  with each other where the protocol matches and not with Table 1.
 - **Network access** is needed on first run to download the datasets from
   Figshare. Afterwards `matminer` serves them from its local cache.
 
